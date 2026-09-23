@@ -24,7 +24,7 @@ DB_NAME="ecomdb"
 DB_USER="ecomuser"
 DB_PASSWORD="ecompassword"
 APP_DIR="/var/www/html"
-REPO_URL="https://github.com/kodekloudhub/learning-app-ecommerce.git"
+REPO_URL="https://github.com/Ramya-R74/learning-app-ecommerce.git"
 
 
 ###########################################################################
