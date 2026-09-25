@@ -13,11 +13,6 @@ Repository: https://github.com/Ramya-R74/learning-app-ecommerce.git
 ## Screenshots
 
 ![Homepage](assets/image1.png)
-![Script output](assets/image2.png)
-![DB products list](assets/image3.png)
-
-> **Note:** Update the file paths above to match the actual screenshot file
-> names in your `assets/` folder.
 
 ---
 
