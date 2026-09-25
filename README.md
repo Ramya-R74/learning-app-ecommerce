@@ -1,179 +1,102 @@
-# Introduction
+# shell-script-project-deploy-ecommerce-website
 
-This is a sample e-commerce application built for learning purposes.
+## E-Commerce Application Deployment Using a Shell Script
 
-Here's how to deploy it on CentOS systems:
+This is a fictional online store that sells electronic devices. It's a LAMP
+stack application (Linux, Apache, MariaDB, PHP) that can be deployed on a
+single Linux server node.
 
-## Deploy Pre-Requisites
+Repository: https://github.com/Ramya-R74/learning-app-ecommerce.git
 
-1. Install FirewallD
+---
 
-```
-sudo yum install -y firewalld
-sudo systemctl start firewalld
-sudo systemctl enable firewalld
-sudo systemctl status firewalld
-```
+## Screenshots
 
-## Deploy and Configure Database
+![Homepage](assets/image1.png)
+![Script output](assets/image2.png)
+![DB products list](assets/image3.png)
 
-1. Install MariaDB
+> **Note:** Update the file paths above to match the actual screenshot file
+> names in your `assets/` folder.
 
-```
-sudo yum install -y mariadb-server
-sudo vi /etc/my.cnf
-sudo systemctl start mariadb
-sudo systemctl enable mariadb
-```
+---
 
-2. Configure firewall for Database
+## What the Script Does
 
-```
-sudo firewall-cmd --permanent --zone=public --add-port=3306/tcp
-sudo firewall-cmd --reload
-```
+The deployment script automates the full setup of the application on a
+fresh server, end to end:
 
-3. Configure Database
+* Install, enable & start the firewall service
+* Install, start & enable the Apache/httpd web server
+* Configure the firewall rules for the web server
+* Install, start & configure the MariaDB database service
+* Configure the database config file (port settings, etc.)
+* Enable the required firewall rule for the SQL port (3306) and reload
+* Create the application database
+* Create a database user and grant the appropriate access privileges
+  using the MySQL command-line utility
+* Load inventory data about the website's products into the database
+  using an external SQL script
+* Install the required packages for the website, including PHP and the
+  PHP-to-MySQL connector
+* Add the firewall rule to allow access to port 80 and reload the
+  firewall configuration
+* Configure the web server to use `index.php` as the default page
+  instead of `index.html`
+* Install `git` (if not already present) and clone the application code
+  from GitHub
+* Verify the deployment by testing that the site is serving product data
 
-```
-$ mysql
-MariaDB > CREATE DATABASE ecomdb;
-MariaDB > CREATE USER 'ecomuser'@'localhost' IDENTIFIED BY 'ecompassword';
-MariaDB > GRANT ALL PRIVILEGES ON *.* TO 'ecomuser'@'localhost';
-MariaDB > FLUSH PRIVILEGES;
-```
+---
 
-> ON a multi-node setup remember to provide the IP address of the web server here: `'ecomuser'@'web-server-ip'`
+## Supported Platforms
 
-4. Load Product Inventory Information to database
+This project includes two versions of the deployment script:
 
-Create the db-load-script.sql
+| Script | OS | Package Manager | Web Server | Firewall |
+|---|---|---|---|---|
+| `deploy-ecommerce.sh` | CentOS | `yum` | `httpd` | `firewalld` |
+| `deploy-ecommerce-ubuntu.sh` | Ubuntu | `apt` | `apache2` | `ufw` |
 
-```
-cat > db-load-script.sql <<-EOF
-USE ecomdb;
-CREATE TABLE products (id mediumint(8) unsigned NOT NULL auto_increment,Name varchar(255) default NULL,Price varchar(255) default NULL, ImageUrl varchar(255) default NULL,PRIMARY KEY (id)) AUTO_INCREMENT=1;
+---
 
-INSERT INTO products (Name,Price,ImageUrl) VALUES ("Laptop","100","c-1.png"),("Drone","200","c-2.png"),("VR","300","c-3.png"),("Tablet","50","c-5.png"),("Watch","90","c-6.png"),("Phone Covers","20","c-7.png"),("Phone","80","c-8.png"),("Laptop","150","c-4.png");
+## Prerequisites
 
-EOF
-```
+* A fresh CentOS or Ubuntu server (tested on a single-node setup)
+* `sudo`/root access
+* Outbound internet access (to install packages and clone the repo)
 
-Run sql script
+---
 
-```
+## Usage
 
-sudo mysql < db-load-script.sql
-```
+1. Clone this repository onto your server:
+   ```bash
+   git clone https://github.com/Ramya-R74/learning-app-ecommerce.git
+   cd learning-app-ecommerce
+   ```
 
+2. Make the relevant script executable:
+   ```bash
+   chmod +x deploy-ecommerce-ubuntu.sh   # or deploy-ecommerce.sh for CentOS
+   ```
 
-## Deploy and Configure Web
+3. Run it:
+   ```bash
+   sudo ./deploy-ecommerce-ubuntu.sh
+   ```
 
-1. Install required packages
+4. Once the script finishes, open the site in your browser at:
+   ```
+   http://localhost
+   ```
 
-```
-sudo yum install -y httpd php php-mysqlnd
-sudo firewall-cmd --permanent --zone=public --add-port=80/tcp
-sudo firewall-cmd --reload
-```
+---
 
-2. Configure httpd
+## Notes
 
-Change `DirectoryIndex index.html` to `DirectoryIndex index.php` to make the php page the default page
-
-```
-sudo sed -i 's/index.html/index.php/g' /etc/httpd/conf/httpd.conf
-```
-
-3. Start httpd
-
-```
-sudo systemctl start httpd
-sudo systemctl enable httpd
-```
-
-4. Download code
-
-```
-sudo yum install -y git
-sudo git clone https://github.com/kodekloudhub/learning-app-ecommerce.git /var/www/html/
-```
-
-<!-- 5. Update index.php
-
-Update [index.php](https://github.com/kodekloudhub/learning-app-ecommerce/blob/13b6e9ddc867eff30368c7e4f013164a85e2dccb/index.php#L107) file to connect to the right database server. In this case `localhost` since the database is on the same server.
-
-```
-sudo sed -i 's/172.20.1.101/localhost/g' /var/www/html/index.php
-
-              <?php
-                        $link = mysqli_connect('172.20.1.101', 'ecomuser', 'ecompassword', 'ecomdb');
-                        if ($link) {
-                        $res = mysqli_query($link, "select * from products;");
-                        while ($row = mysqli_fetch_assoc($res)) { ?>
-```
-
-> ON a multi-node setup remember to provide the IP address of the database server here.
-```
-sudo sed -i 's/172.20.1.101/localhost/g' /var/www/html/index.php
-```
--->
-
-5. Create and Configure the `.env` File
-
-   Create an `.env` file in the root of your project folder.
-
-   ```sh
-   cat > /var/www/html/.env <<-EOF
-   DB_HOST=localhost
-   DB_USER=ecomuser
-   DB_PASSWORD=ecompassword
-   DB_NAME=ecomdb
-   EOF
-
-6. Update `index.php`
-
-   Update the `index.php` file to load the environment variables from the `.env` file and use them to connect to the database.
-
-   ```php
-   <?php
-   // Function to load environment variables from a .env file
-   function loadEnv($path)
-   {
-       if (!file_exists($path)) {
-           return false;
-       }
-
-       $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-       foreach ($lines as $line) {
-           if (strpos(trim($line), '#') === 0) {
-               continue;
-           }
-
-           list($name, $value) = explode('=', $line, 2);
-           $name = trim($name);
-           $value = trim($value);
-           putenv(sprintf('%s=%s', $name, $value));
-       }
-       return true;
-   }
-
-   // Load environment variables from .env file
-   loadEnv(__DIR__ . '/.env');
-
-   // Retrieve the database connection details from environment variables
-   $dbHost = getenv('DB_HOST');
-   $dbUser = getenv('DB_USER');
-   $dbPassword = getenv('DB_PASSWORD');
-   $dbName = getenv('DB_NAME');
-
-   ?>
-
-   ON a multi-node setup, remember to provide the IP address of the database server in the .env file.
-
-
-7. Test
-
-```
-curl http://localhost
-```
+* Database credentials used by the script (`ecomuser` / `ecompassword`)
+  are for learning purposes only — change them before using this in any
+  real environment.
+* On a multi-node setup, update the `DB_HOST` value in the `.env` file
+  to point to the database server's IP address instead of `localhost`.
